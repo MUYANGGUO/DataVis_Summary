@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Worldwide Earthquake stats 2000-2015</title>
+        <script src="../lib/d3.v5.min.js"></script>
+    </head>
+        <style>
+            .line_5_6{
+                fill: none;
+                stroke: #ffc300;
+                stroke-width: 2;
+            }
+            .dot_5_6 {
+                fill: #ffc300;
+                stroke: #ffc300;
+            }
+            .line_6_7{
+                fill: none;
+                stroke: #ff5733;
+                stroke-width: 2;
+            }
+            .dot_6_7 {
+                fill: #ff5733;
+                stroke: #ff5733;
+            }
+            .line_7_8{
+                fill: none;
+                stroke: #c70039;
+                stroke-width: 2;
+            }
+            .dot_7_8 {
+                fill: #c70039;
+                stroke: #c70039;
+            }           
+            .line_8_up{
+                fill: none;
+                stroke: #900c3f;
+                stroke-width: 2;
+            }
+            .dot_8_up {
+                fill: #900c3f;
+                stroke: #900c3f;
+            }  
+            .legend{
+                padding: 10px;
+            }
+            .legend_text {
+            font-family: sans-serif;
+            font-size: 16px;
+            fill: black;
+            }
+            .axis_text {
+            font-family: sans-serif;
+            font-size: 14px;
+            fill: none;
+            }
+            .title_text {
+            font-family: sans-serif;
+            font-size: 24px;
+            fill: black;
+            }
+
+            @media print {
+            .pagebreak {
+              clear: both;
+              page-break-after: always;
+                }
+            }
+        </style>
+    <body>
+        <div id="Qa">
+        <script type="text/javascript">
+            var margin = {top: 50, right: 100, bottom: 50, left: 100}
+            , width = 900 - margin.left - margin.right 
+            , height = 400 - margin.top - margin.bottom;
+
+            d3.dsv(",","earthquakes.csv").then(function(data) {
+            data.sort(function(a,b) { return +a.year - +b.year });
+            data.forEach(function(d) {
+            d.year = d3.timeParse("%Y")(d.year)
+            d["5_5.9"] = +d["5_5.9"]
+            d["6_6.9"] = +d["6_6.9"]
+            d["7_7.9"] = +d["7_7.9"]
+            d["8.0+"] = +d["8.0+"]
+            d["Estimated Deaths"] = +d["Estimated Deaths"]
+            });
+
+
+            //sclae the x , y axis
+            var x = d3.scaleTime()
+                .domain(d3.extent(data, function(d) { return d.year; }))
+                .range([ 0, width ]);
+            var y = d3.scaleLinear()
+                .domain([0, d3.max(data, function(d) { return Math.max(d["5_5.9"], d["6_6.9"], d["7_7.9"], d["8.0+"])})])
+                .range([ height, 0]);
+            // line data
+            var line_1_1 = d3.line()
+                .x(function(d, i) { return x(d.year); }) 
+                .y(function(d) { return y(d["5_5.9"]); })  
+                .curve(d3.curveMonotoneX) 
+            var line_1_2 = d3.line()
+                .x(function(d, i) { return x(d.year); })
+                .y(function(d) { return y(d["6_6.9"]); }) 
+                .curve(d3.curveMonotoneX) // 
+            var line_1_3 = d3.line()
+                .x(function(d, i) { return x(d.year); }) 
+                .y(function(d) { return y(d["7_7.9"]); })  
+                .curve(d3.curveMonotoneX) //
+            var line_1_4 = d3.line()
+                .x(function(d, i) { return x(d.year); }) 
+                .y(function(d) { return y(d["8.0+"]); }) 
+                .curve(d3.curveMonotoneX) //
+            
+            var svg_1 = d3.select("#Qa").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            var color_hash = [ 
+                ['5_5.9', '#FFC300'],
+                ['6_6.9', '#FF5733'],
+                ['7_7.9', '#C70039'],
+                ['8.0+', '#900C3F']
+                ]   
+            var legend = svg_1.append("g")
+            .attr("class","legend")
+            legend.selectAll('g').data(color_hash)
+                .enter()
+                .append('g')
+                .each(function(d, i) {
+                    var g = d3.select(this);
+                    g.append("rect")
+                    .attr("x", 0.95*width +50)
+                    .attr("y", i*20)
+                    .attr("width", 0.04*width)
+                    .attr("height", 0.04*height)
+                    .style("fill", color_hash[i][1]);
+            
+                    g.append("text")
+                    .attr("x", width +50 )
+                    .attr("y", i * 20+12)
+                    .attr("height",0.05*height)
+                    .attr("width",0.05*width)
+                    .attr("class","legend_text")
+                    .text(color_hash[i][0]);
+            });
+            svg_1.append("text")
+                .attr("x", (width / 2))             
+                .attr("y", 0-0.2*margin.top)
+                .attr("text-anchor", "middle")  
+                .attr("class","title_text")
+                .text("Worldwide Earthquake stats 2000-2015");
+            //layout the x and y axies
+            svg_1.append("g")
+                .attr("class", "axis_text")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x)); 
+            svg_1.append("g")
+                .attr("class", "axis_text")
+                .call(d3.axisLeft(y)); 
+
+            svg_1.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", 0 - margin.left)
+                .attr("x",0 - (height / 2))
+                .attr("dy", "1em")
+                .attr("class","title_text")
+                .style("text-anchor", "middle")
+                .text("Num of Earthquakes");
+
+            svg_1.append("text")
+                .attr("x", (width / 2))             
+                .attr("y", height+margin.bottom)
+                .attr("text-anchor", "middle")  
+                .attr("class","title_text")
+                .text("Year");
+            
+            // 9. Append the path, bind the data, and call the line generator 
+            svg_1.append("path")
+                .datum(data) 
+                .attr("class", "line_5_6")
+                .attr("d", line_1_1); 
+            svg_1.append("path")
+                .datum(data) 
+                .attr("class", "line_6_7")
+                .attr("d", line_1_2); 
+            svg_1.append("path")
+                .datum(data) 
+                .attr("class", "line_7_8")
+                .attr("d", line_1_3); 
+            svg_1.append("path")
+                .datum(data) 
+                .attr("class", "line_8_up")
+                .attr("d", line_1_4);
+            
+         
+        });
+        </script>
+        </div>
+        <div class="pagebreak"> </div>
+        <div id="Qb">
+                <script type="text/javascript">
+        
+                    d3.dsv(",","earthquakes.csv").then(function(data) {
+                    data.sort(function(a,b) { return +a.year - +b.year });
+                    data.forEach(function(d) {
+                    d.year = d3.timeParse("%Y")(d.year)
+                    d["5_5.9"] = +d["5_5.9"]
+                    d["6_6.9"] = +d["6_6.9"]
+                    d["7_7.9"] = +d["7_7.9"]
+                    d["8.0+"] = +d["8.0+"]
+                    d["Estimated Deaths"] = +d["Estimated Deaths"]
+                    });
+        
+        
+                    //sclae the x , y axis
+                    var x = d3.scaleTime()
+                        .domain(d3.extent(data, function(d) { return d.year; }))
+                        .range([ 0, width ]);
+                    var y = d3.scaleLinear()
+                        .domain([0, d3.max(data, function(d) { return Math.max(d["5_5.9"], d["6_6.9"], d["7_7.9"], d["8.0+"])})])
+                        .range([ height, 0]);
+                    
+                    var line_2_1 = d3.line()
+                        .x(function(d, i) { return x(d.year); }) 
+                        .y(function(d) { return y(d["5_5.9"]); })  
+                        .curve(d3.curveMonotoneX) 
+                    var line_2_2 = d3.line()
+                        .x(function(d, i) { return x(d.year); })
+                        .y(function(d) { return y(d["6_6.9"]); }) 
+                        .curve(d3.curveMonotoneX)  
+                    var line_2_3 = d3.line()
+                        .x(function(d, i) { return x(d.year); }) 
+                        .y(function(d) { return y(d["7_7.9"]); })  
+                        .curve(d3.curveMonotoneX) 
+                    var line_2_4 = d3.line()
+                        .x(function(d, i) { return x(d.year); }) 
+                        .y(function(d) { return y(d["8.0+"]); }) 
+                        .curve(d3.curveMonotoneX) 
+                    
+                    var svg_2 = d3.select("#Qb").append("svg")
+                        .attr("width", width + margin.left + margin.right)
+                        .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
+                    svg_2.append("g")
+                        .attr("class", "axis_text")
+                        .attr("transform", "translate(0," + height + ")")
+                        .call(d3.axisBottom(x)); 
+                   
+                    svg_2.append("g")
+                        .attr("class", "axis_text")
+                        .call(d3.axisLeft(y)); 
+                    svg_2.append("path")
+                        .datum(data) 
+                        .attr("class", "line_5_6")
+                        .attr("d", line_2_1); 
+                    svg_2.append("path")
+                        .datum(data) 
+                        .attr("class", "line_6_7")
+                        .attr("d", line_2_2); 
+                    svg_2.append("path")
+                        .datum(data) 
+                        .attr("class", "line_7_8")
+                        .attr("d", line_2_3); 
+                    svg_2.append("path")
+                        .datum(data) 
+                        .attr("class", "line_8_up")
+                        .attr("d", line_2_4);
+
+                    var dot_radius = d3.scaleLinear()
+                        .domain([d3.min(data, function(d) { return Math.min(d["Estimated Deaths"])}), d3.max(data, function(d) { return Math.max(d["Estimated Deaths"])})])
+                        .range([5, 12]);
+                        
+                    svg_2.selectAll(".dot_5_6")
+                        .data(data)
+                        .enter().append("circle")
+                        .attr("class", "dot_5_6")
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["5_5.9"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])}) 
+                    
+                    svg_2.selectAll(".dot_6_7")
+                        .data(data)
+                        .enter().append("circle") 
+                        .attr("class", "dot_6_7") 
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["6_6.9"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])}) 
+
+                    svg_2.selectAll(".dot_7_8")
+                        .data(data)
+                        .enter().append("circle") 
+                        .attr("class", "dot_7_8") 
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["7_7.9"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])})
+                    svg_2.selectAll(".dot_8_up")
+                        .data(data)
+                        .enter().append("circle") 
+                        .attr("class", "dot_8_up")
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["8.0+"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])}) 
+
+                        var color_hash = [ 
+                            ['5_5.9', '#FFC300'],
+                            ['6_6.9', '#FF5733'],
+                            ['7_7.9', '#C70039'],
+                            ['8.0+', '#900C3F']
+                            ]   
+                        var legend = svg_2.append("g")
+                        .attr("class","legend")
+                        legend.selectAll('g').data(color_hash)
+                            .enter()
+                            .append('g')
+                            .each(function(d, i) {
+                                var g = d3.select(this);
+                                g.append("rect")
+                                .attr("x", 0.95*width +50)
+                                .attr("y", i*20)
+                                .attr("width", 0.04*width)
+                                .attr("height", 0.04*height)
+                                .style("fill", color_hash[i][1]);
+                        
+                                g.append("text")
+                                .attr("x", width +50 )
+                                .attr("y", i * 20+12)
+                                .attr("height",0.05*height)
+                                .attr("width",0.05*width)
+                                .attr("class","legend_text")
+                                .text(color_hash[i][0]);
+                        });                   
+                    svg_2.append("text")
+                        .attr("x", (width / 2))             
+                        .attr("y", 0-0.2*margin.top)
+                        .attr("text-anchor", "middle")  
+                        .attr("class","title_text")
+                        .text("Worldwide Earthquake stats 2000-2015 with symbols");
+
+                    svg_2.append("text")
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", 0 - margin.left)
+                        .attr("x",0 - (height / 2))
+                        .attr("dy", "1em")
+                        .attr("class","title_text")
+                        .style("text-anchor", "middle")
+                        .text("Num of Earthquakes");
+
+                    svg_2.append("text")
+                        .attr("x", (width / 2))             
+                        .attr("y", height+margin.bottom)
+                        .attr("text-anchor", "middle")  
+                        .attr("class","title_text")
+                        .text("Year");           
+                 });
+                </script>
+        </div>
+        <div class="pagebreak"> </div>
+        <div id="Qc1">
+                <script type="text/javascript">
+        
+                    d3.dsv(",","earthquakes.csv").then(function(data) {
+                    data.sort(function(a,b) { return +a.year - +b.year });
+                    data.forEach(function(d) {
+                    d.year = d3.timeParse("%Y")(d.year)
+                    d["5_5.9"] = +d["5_5.9"]
+                    d["6_6.9"] = +d["6_6.9"]
+                    d["7_7.9"] = +d["7_7.9"]
+                    d["8.0+"] = +d["8.0+"]
+                    d["Estimated Deaths"] = +d["Estimated Deaths"]
+                    });
+        
+        
+                    var x = d3.scaleTime()
+                        .domain(d3.extent(data, function(d) { return d.year; }))
+                        .range([ 0, width ]);
+                    var y = d3.scaleSqrt()
+                        .domain([0, d3.max(data, function(d) { return Math.max(d["5_5.9"], d["6_6.9"], d["7_7.9"], d["8.0+"])})])
+                        .range([ height, 0]);
+       
+                    var line_3_1 = d3.line()
+                        .x(function(d, i) { return x(d.year); }) 
+                        .y(function(d) { return y(d["5_5.9"]); })  
+                        .curve(d3.curveMonotoneX) 
+                    var line_3_2 = d3.line()
+                        .x(function(d, i) { return x(d.year); })
+                        .y(function(d) { return y(d["6_6.9"]); }) 
+                        .curve(d3.curveMonotoneX) 
+                    var line_3_3 = d3.line()
+                        .x(function(d, i) { return x(d.year); }) 
+                        .y(function(d) { return y(d["7_7.9"]); })  
+                        .curve(d3.curveMonotoneX) 
+                    var line_3_4 = d3.line()
+                        .x(function(d, i) { return x(d.year); }) 
+                        .y(function(d) { return y(d["8.0+"]); }) 
+                        .curve(d3.curveMonotoneX) 
+                    
+                    var svg_3 = d3.select("#Qc1").append("svg")
+                        .attr("width", width + margin.left + margin.right)
+                        .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
+      
+                    svg_3.append("g")
+                        .attr("class", "axis_text")
+                        .attr("transform", "translate(0," + height + ")")
+                        .call(d3.axisBottom(x)); 
+                   
+                    svg_3.append("g")
+                        .attr("class", "axis_text")
+                        .call(d3.axisLeft(y)); 
+                    svg_3.append("path")
+                        .datum(data) 
+                        .attr("class", "line_5_6")
+                        .attr("d", line_3_1); 
+                    svg_3.append("path")
+                        .datum(data) 
+                        .attr("class", "line_6_7")
+                        .attr("d", line_3_2); 
+                    svg_3.append("path")
+                        .datum(data) 
+                        .attr("class", "line_7_8")
+                        .attr("d", line_3_3); 
+                    svg_3.append("path")
+                        .datum(data) 
+                        .attr("class", "line_8_up")
+                        .attr("d", line_3_4);
+
+                    var dot_radius = d3.scaleLinear()
+                        .domain([d3.min(data, function(d) { return Math.min(d["Estimated Deaths"])}), d3.max(data, function(d) { return Math.max(d["Estimated Deaths"])})])
+                        .range([5, 12]);
+                        
+                    svg_3.selectAll(".dot_5_6")
+                        .data(data)
+                        .enter().append("circle") 
+                        .attr("class", "dot_5_6") 
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["5_5.9"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])}) 
+                    
+                    svg_3.selectAll(".dot_6_7")
+                        .data(data)
+                        .enter().append("circle")
+                        .attr("class", "dot_6_7")
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["6_6.9"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])}) 
+
+                    svg_3.selectAll(".dot_7_8")
+                        .data(data)
+                        .enter().append("circle")
+                        .attr("class", "dot_7_8") 
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["7_7.9"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])})
+                    svg_3.selectAll(".dot_8_up")
+                        .data(data)
+                        .enter().append("circle") 
+                        .attr("class", "dot_8_up") 
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["8.0+"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])}) 
+
+                        var color_hash = [ 
+                            ['5_5.9', '#FFC300'],
+                            ['6_6.9', '#FF5733'],
+                            ['7_7.9', '#C70039'],
+                            ['8.0+', '#900C3F']
+                            ]   
+                        var legend = svg_3.append("g")
+                        .attr("class","legend")
+                        legend.selectAll('g').data(color_hash)
+                            .enter()
+                            .append('g')
+                            .each(function(d, i) {
+                                var g = d3.select(this);
+                                g.append("rect")
+                                .attr("x", 0.95*width +50)
+                                .attr("y", i*20)
+                                .attr("width", 0.04*width)
+                                .attr("height", 0.04*height)
+                                .style("fill", color_hash[i][1]);
+                        
+                                g.append("text")
+                                .attr("x", width +50 )
+                                .attr("y", i * 20+12)
+                                .attr("height",0.05*height)
+                                .attr("width",0.05*width)
+                                .attr("class","legend_text")
+                                .text(color_hash[i][0]);
+                        });                   
+                    svg_3.append("text")
+                        .attr("x", (width / 2))             
+                        .attr("y", 0-0.2*margin.top)
+                        .attr("text-anchor", "middle")  
+                        .attr("class","title_text")
+                        .text("Worldwide Earthquake stats 2000-2015 square root scale");
+
+                    svg_3.append("text")
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", 0 - margin.left)
+                        .attr("x",0 - (height / 2))
+                        .attr("dy", "1em")
+                        .attr("class","title_text")
+                        .style("text-anchor", "middle")
+                        .text("Num of Earthquakes");
+
+                    svg_3.append("text")
+                        .attr("x", (width / 2))             
+                        .attr("y", height+margin.bottom)
+                        .attr("text-anchor", "middle")  
+                        .attr("class","title_text")
+                        .text("Year");           
+                 });
+                </script>
+        </div>
+        <div class="pagebreak"> </div>
+        <div id="Qc2">
+                <script type="text/javascript">
+        
+                    d3.dsv(",","earthquakes.csv").then(function(data) {
+                    data.sort(function(a,b) { return +a.year - +b.year });
+                    data.forEach(function(d) {
+                    d.year = d3.timeParse("%Y")(d.year)
+                    d["5_5.9"] = +d["5_5.9"]
+                    d["6_6.9"] = +d["6_6.9"]
+                    d["7_7.9"] = +d["7_7.9"]
+                    d["8.0+"] = +d["8.0+"]
+                    d["Estimated Deaths"] = +d["Estimated Deaths"]
+                    });
+        
+        
+                   
+                    var x = d3.scaleTime()
+                        .domain(d3.extent(data, function(d) { return d.year; }))
+                        .range([ 0, width ]);
+                    var y = d3.scaleLog().clamp(true)
+                        .domain([1, d3.max(data, function(d) { return Math.max(d["5_5.9"], d["6_6.9"], d["7_7.9"], d["8.0+"])})])
+                        .range([ height, 0]);
+   
+                    var line_4_1 = d3.line()
+                        .x(function(d, i) { return x(d.year); }) 
+                        .y(function(d) { return y(d["5_5.9"]); })  
+                        .curve(d3.curveMonotoneX) 
+                    var line_4_2 = d3.line()
+                        .x(function(d, i) { return x(d.year); })
+                        .y(function(d) { return y(d["6_6.9"]); }) 
+                        .curve(d3.curveMonotoneX) // 
+                    var line_4_3 = d3.line()
+                        .x(function(d, i) { return x(d.year); }) 
+                        .y(function(d) { return y(d["7_7.9"]); })  
+                        .curve(d3.curveMonotoneX) //
+                    var line_4_4 = d3.line()
+                        .x(function(d, i) { return x(d.year); }) 
+                        .y(function(d) { return y(d["8.0+"]); }) 
+                        .curve(d3.curveMonotoneX) //
+                    
+                    var svg_4 = d3.select("#Qc2").append("svg")
+                        .attr("width", width + margin.left + margin.right)
+                        .attr("height", height + margin.top + margin.bottom)
+                    .append("g")
+                        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+                    svg_4.append("g")
+                        .attr("class", "axis_text")
+                        .attr("transform", "translate(0," + height + ")")
+                        .call(d3.axisBottom(x)); 
+                   
+                    svg_4.append("g")
+                        .attr("class", "axis_text")
+                        .call(d3.axisLeft(y)); 
+                   
+                    svg_4.append("path")
+                        .datum(data) 
+                        .attr("class", "line_5_6")
+                        .attr("d", line_4_1); 
+                    svg_4.append("path")
+                        .datum(data) 
+                        .attr("class", "line_6_7")
+                        .attr("d", line_4_2); 
+                    svg_4.append("path")
+                        .datum(data) 
+                        .attr("class", "line_7_8")
+                        .attr("d", line_4_3); 
+                    svg_4.append("path")
+                        .datum(data) 
+                        .attr("class", "line_8_up")
+                        .attr("d", line_4_4);
+
+                    var dot_radius = d3.scaleLinear()
+                        .domain([d3.min(data, function(d) { return Math.min(d["Estimated Deaths"])}), d3.max(data, function(d) { return Math.max(d["Estimated Deaths"])})])
+                        .range([5, 12]);
+                        
+                    svg_4.selectAll(".dot_5_6")
+                        .data(data)
+                        .enter().append("circle")
+                        .attr("class", "dot_5_6")
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["5_5.9"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])}) 
+                    
+                    svg_4.selectAll(".dot_6_7")
+                        .data(data)
+                        .enter().append("circle") 
+                        .attr("class", "dot_6_7") 
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["6_6.9"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])}) 
+
+                    svg_4.selectAll(".dot_7_8")
+                        .data(data)
+                        .enter().append("circle") 
+                        .attr("class", "dot_7_8")
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["7_7.9"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])})
+                    svg_4.selectAll(".dot_8_up")
+                        .data(data)
+                        .enter().append("circle") 
+                        .attr("class", "dot_8_up") 
+                        .attr("cx", function(d) { return x(d.year) })
+                        .attr("cy", function(d) { return y(d["8.0+"]) })
+                        .attr("r", function(d) {return dot_radius(d["Estimated Deaths"])}) 
+
+                        var color_hash = [ 
+                            ['5_5.9', '#FFC300'],
+                            ['6_6.9', '#FF5733'],
+                            ['7_7.9', '#C70039'],
+                            ['8.0+', '#900C3F']
+                            ]   
+                        var legend = svg_4.append("g")
+                        .attr("class","legend")
+                        legend.selectAll('g').data(color_hash)
+                            .enter()
+                            .append('g')
+                            .each(function(d, i) {
+                                var g = d3.select(this);
+                                g.append("rect")
+                                .attr("x", 0.95*width +50)
+                                .attr("y", i*20)
+                                .attr("width", 0.04*width)
+                                .attr("height", 0.04*height)
+                                .style("fill", color_hash[i][1]);
+                        
+                                g.append("text")
+                                .attr("x", width +50 )
+                                .attr("y", i * 20+12)
+                                .attr("height",0.05*height)
+                                .attr("width",0.05*width)
+                                .attr("class","legend_text")
+                                .text(color_hash[i][0]);
+                        });                   
+                    svg_4.append("text")
+                        .attr("x", (width / 2))             
+                        .attr("y", 0-0.2*margin.top)
+                        .attr("text-anchor", "middle")  
+                        .attr("class","title_text")
+                        .text("Worldwide Earthquake stats 2000-2015 log scale");
+
+                    svg_4.append("text")
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", 0 - margin.left)
+                        .attr("x",0 - (height / 2))
+                        .attr("dy", "1em")
+                        .attr("class","title_text")
+                        .style("text-anchor", "middle")
+                        .text("Num of Earthquakes");
+
+                    svg_4.append("text")
+                        .attr("x", (width / 2))             
+                        .attr("y", height+margin.bottom)
+                        .attr("text-anchor", "middle")  
+                        .attr("class","title_text")
+                        .text("Year");           
+                 });
+                </script>
+        </div>
+    </body>
+</html>

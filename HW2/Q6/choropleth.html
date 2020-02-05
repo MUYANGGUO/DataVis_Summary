@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <title>World Earthquake stats 2000-2015</title>
+      <script src="../lib/d3.v5.min.js"></script>
+      <script src="../lib/d3-tip.min.js"></script>
+      <script src="../lib/topojson.v2.min.js"></script>
+    </head>
+      <style>
+		  	.legend_text {
+            font-family: sans-serif;
+            font-size: 16px;
+            fill: black;
+            }
+			.title_text {
+            font-family: sans-serif;
+            font-size: 24px;
+            fill: black;
+            }
+			.d3-tip {
+			line-height: 1;
+			padding: 8px;
+			background: rgba(0, 0, 0, 0.8);
+			color: white;
+			border-radius: 4px;
+			font-size: 14px;
+			}
+			.states_path {
+			fill: none;
+			stroke: black;
+			stroke-linejoin: round;
+			}
+    </style>
+    <div id="worldmap"></div>
+    <body>
+  	<script type="text/javascript">
+		var margin = {top:100, right: 120, bottom:100, left:120}
+		, width = 1000 - margin.left - margin.right 
+		, height = 600 - margin.top - margin.bottom;
+
+		var svg = d3.select("#worldmap")
+			.append("svg")
+			.attr("width", width + margin.left + margin.right)
+			.attr("height", height + margin.top + margin.bottom)
+			.append("g")
+			.attr("transform","translate(" + margin.left + "," + margin.top + ")");
+		var projection = d3.geoAlbersUsa()
+			.translate([(width)/2, height/2])
+			.scale([1000]);
+			
+		var path = d3.geoPath().projection(projection);
+		
+		var Scaled_Color = d3.scaleQuantize()
+		var Color_Scheme = d3.schemeReds[9] // use a red color hue to quantize to 9 gradation
+		
+		var dataset = []
+      	d3.dsv(",","state-earthquakes.csv").then(function(data) {
+      	for (var i=0; i < data.length; i++) {
+      		dataset.push({state: data[i].States, 
+			  	region:data[i].Region, 
+				value: +data[i]["Total Earthquakes"]})
+      	}
+      		Scaled_Color.domain([Math.log(1),Math.log(d3.max(dataset, function(d) { return d.value; }))])
+		  	.range(Color_Scheme); // map the log scale of the counts of earthquakes to the color scheme
+		})
+
+      	var promise = d3.json("states-10m.json")
+	
+      	promise.then( function(json){
+      	var tip = d3.tip().attr('class', 'd3-tip').offset([0,5])
+      	    .html(function(d) { return "State: "+d.properties.name+"<br/> Region: "+d.properties.region+"<br/> Earthquakes: "+d.properties.value
+      	    });
+
+      	svg.call(tip);
+     
+      	svg.append("g")
+      	     .attr("class", "states_path")
+			.selectAll("path")
+			.data(topojson.feature(json, json.objects.states).features)
+			.enter()
+			.append("path")
+			.attr("d", path)
+			.style("fill", function(d){
+				var state = d.properties.name
+				for (var i=0; i<dataset.length;i++) {
+					if (state == dataset[i].state) {
+						d.properties["value"] =  dataset[i].value
+						d.properties["region"] = dataset[i].region
+					}
+				}
+				return Scaled_Color(Math.log(d.properties.value))
+			})
+			.on('mouseover', tip.show)
+			.on('mouseout', tip.hide);
+
+        var count_max = d3.max(dataset, function(d) { return d.value;})
+
+        var legend = svg.append("g")
+            .attr("class", "legend")
+          	legend.selectAll('g').data(Color_Scheme)
+            .enter()
+            .append('g')
+            .each(function(d, i) {
+				var g = d3.select(this);
+				g.append("rect")
+					.attr("x", width +10)
+					.attr("y", i*20)
+					.attr("width", 20)
+					.attr("height", 20)
+					.style("fill", Color_Scheme[i]);
+				
+				g.append("text")
+					.attr("class","legend_text")
+					.attr("x", width +35 )
+					.attr("y", 20+i*20 )
+					.attr("height",20)
+					.attr("width",20)
+					.text(Math.exp(i*Math.log(count_max)/9).toFixed(0)) // the earthquake count number
+					.style("fill", "black");
+					
+				});
+				
+		svg.append("text")
+		.attr("class","legend_text")
+		.attr("x", width+30)             
+		.attr("y", -20)
+		.attr("text-anchor", "middle")  
+		.text("Earthquake Frequency"); 
+
+
+		svg.append("text")
+		.attr("class","title_text")
+		.attr("x", width/2)             
+		.attr("y", -40)
+		.attr("text-anchor", "middle")  
+		.text("Choropleth Map of State Data"); 
+		
+      })
+
+  	</script>
+  </body>
+</html>

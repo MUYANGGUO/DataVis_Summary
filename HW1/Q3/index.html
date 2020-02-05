@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang='en'>
+    <head>
+		<mata charset="utf-8">
+		<title>Lego Sets by Year from Rebrickable</title>
+        <script type="text/javascript" src="lib/d3/d3.min.js"> </script>
+        <script type="text/javascript" src="lib/d3-fetch/d3-fetch.min.js"></script>
+        <script type="text/javascript" src="lib/d3-fetch/d3-fetch.min.js"></script>
+        <style>	
+		.axis {
+	    font: 10px sans-serif;
+	    }
+
+	    .axis path,
+	    .axis line {
+	    fill: none;
+	    stroke:#000;
+	    shape-rendering: crispEdges;
+	    }
+		</style>
+	</head>
+	<body>
+        <script type="text/javascript">
+            var margin = {top: 20, right: 20, bottom:20, left: 20},
+            w = 1200 - margin.left - margin.right,
+            h = 600 - margin.top - margin.bottom;
+			var outer_padding=40;
+			var vertical_padding=40;
+			var svg = d3.select("body").append("svg").attr("width", w).attr("height", h);
+			//get data
+            var parse_Year = d3.timeParse("%Y");
+			d3.dsv(",","q3.csv",function(d){
+			return{
+			year:parse_Year(d.year),
+			running_total:+d.running_total
+			};
+			}).then(function(data){
+			console.log(data);
+			//scale x,y
+			var scale_year=d3.scaleTime().domain([d3.min(data,function(d){return d.year;}),d3.max(data,function(d){return d.year;})]).range([outer_padding,w-outer_padding]);
+			var scale_y=d3.scaleLinear().domain([d3.min(data,function(d){return d.running_total;}),d3.max(data,function(d){return d.running_total;})])
+			.range([h,vertical_padding*4]);
+			//define the bar width based on the data length scale with 0.8 to avoid overlap
+			var len=data.length;
+			console.log(len);
+			var barwidth=0.8*(w-outer_padding*2)/len;
+			//Add attrs of bar
+			svg.selectAll("bar")
+			   .data(data)
+			   .enter()
+			   .append("rect")
+			.attr("x",function(d){return scale_year(d.year);})
+			.attr("width",barwidth)
+			.attr("y",function(d){return scale_y(d.running_total)-vertical_padding;})
+			.attr("height",function(d){return h-scale_y(d.running_total); })
+			.attr("font-family", "sans-serif")
+			.attr("fill","#4d94ff");
+			//x and y axis
+			var x=d3.axisBottom().scale(scale_year).ticks(d3.timeYear.every(3));
+                svg.append("g")
+                    .attr("class", "axis")
+                    .attr("transform", "translate(0,"+(h-vertical_padding)+")")
+                    .call(x);
+
+			var y = d3.axisLeft().scale(scale_y).ticks(5);
+				svg.append("g")
+				.attr("class", "axis")
+				.attr("transform", "translate("+outer_padding+","+-vertical_padding+")")
+				.call(y);
+				
+			
+			});	
+	
+		
+			  svg.append("text")
+				.attr("x", (w/2))
+				.attr("y", vertical_padding)
+				.attr("text-anchor", "middle")
+				.style("font-size", "20px")
+				.attr("font-family", "sans-serif")
+				.text("Lego Sets by Year from Rebrickable")
+			  
+			  
+			  svg.append("text")
+                .attr("x", w-1.5*outer_padding)
+                .attr("y", h-0.1*vertical_padding)
+                .style("font-size", "12px")
+                .text("mguo34")
+			
+</script>
+	</body>
+</html>

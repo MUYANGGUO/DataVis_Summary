@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+	<style type="text/css">
+		.legend_text {
+            font-size: 20px;
+            fill: black;
+            }
+        .axis_text {
+            font-family: sans-serif;
+            font-size: 14px;
+            fill: none;
+            }
+        .title_text {
+            font-family: sans-serif;
+            font-size: 24px;
+            fill: black;
+            }
+    </style>
+</head>
+<body>
+<div id="dropdown" style="position:absolute;left:150px;top:80px;font-size:20px">  Range of </div>
+<div id="graph"></div>
+<script src="../lib/d3.v5.min.js"></script>
+<script type="text/javascript">
+	var margin = {top: 100, right: 100, bottom: 100, left: 100}
+        , width = 1000 - margin.left - margin.right 
+        , height = 600 - margin.top - margin.bottom;
+    var gridSize = 50;
+    var padding = 30;
+
+    var heatmap = d3.map();
+	var Category = ["0 to 9", "10 to 99", "100 to 499", "500 or above"]
+	var Color_Scheme = ["#fff3f0", "#fed9d2", "#fcb3a1","#fc9272","#fb6a4a","#f15144","#d4131b", "#a50f15", "#860322"] 
+	
+	d3.csv("earthquakes.csv").then(function(data){
+		
+		var States_list = []
+
+		data.forEach(function(d){
+			var arr = []
+			arr = heatmap.get(d.Category) || [];
+			arr.push({States : d["States"],2010 : +d[2010], 2011: +d[2011],2012: +d[2012],2013: +d[2013],2014: +d[2014], 2015: +d[2015],Category : d["Category"]});
+			States_list.push({States : d["States"]});
+			heatmap.set(d.Category, arr)
+		})
+		draw(heatmap,"0 to 9")
+		
+		var select = d3.select('#dropdown')
+            .append('select')
+            .attr('class','select')
+            .on('change',onchange)
+			.attr("dx", (width / 2))             
+            .attr("dy", 0+90);
+        var options = select
+            .selectAll('option')
+            .data(Category)
+            .enter()
+            .append('option')
+            .text(function(d){return d;});
+            
+        function onchange(){
+            selectValue = d3.select('select')
+                .property('value');
+            draw(heatmap,selectValue);
+        };
+
+
+
+		});
+
+		function draw(heatmap,i){
+			d3.select("svg").remove();
+			var svg = d3.select("body")
+			.append("svg")
+			.attr("width",width+100)
+			.attr("height",height+400)
+			.append("g")
+			.attr("transform","translate(" + margin.left + "," + margin.top + ")");
+
+			var data = heatmap.get(i);
+			//console.log(data)
+			var states = [];
+          	for(var d =0;d<data.length;d++) {
+          	if (data[d].Category == i) {
+        	  states.push(data[d].States);
+            	}
+          	}
+			//console.log(states)
+			var year = ["2015", "2014", "2013", "2012", "2011", "2010"];
+			var newdata = [];
+			for(var j =0;j<data.length;j++) {
+				for (var k =0;k<year.length;k++){
+					if (data[j].Category == i) {
+						newdata.push({"States":data[j].States,"year": year[k], "value":+data[j][year[k]],"category":data[j].Category});
+					}
+				}
+			}
+			//console.log(newdata)
+			var x = d3.scaleBand()
+            .domain(states)
+            .range([ 0, width ])
+            .padding(0.01);
+			var y = d3.scaleBand()
+            .domain(year)
+            .range([ height, 0])
+            .padding(0.01);
+	
+
+			svg.append("g")
+                .attr("class", "axis_text")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x))
+				.selectAll("text")
+				.attr("class", "label")
+				.attr("x", -5)
+				.attr("y",0)
+				.attr("dy", ".35em")
+				.attr("transform", "rotate(300)")
+				.style("text-anchor", "end");
+
+            svg.append("g")
+                .attr("class", "axis_text")
+                .call(d3.axisLeft(y)); 
+		
+			
+
+			var Scaled_Color = d3.scaleQuantile()
+                   .domain(d3.extent(newdata, function(d) { return d.value; }))
+                   .range(Color_Scheme);
+			  
+			svg.selectAll()
+                .data(newdata)
+                .enter()
+                .append("rect")
+                .attr("x", function(d) { return x(d.States) })
+                .attr("y", function(d) { return y(d.year) })
+                .attr("rx", 6)
+                .attr("ry", 6)
+                .attr("width", x.bandwidth() )
+                .attr("height", y.bandwidth() )
+                .style("fill", function(d) { return Scaled_Color(d.value)})
+				.on('mouseover', handleMouseOver)
+                .on('mouseout', handleMouseOut)
+
+                function handleMouseOver(d, i) { 
+                      
+                      svg.append("text")
+					  .attr("class","legend_text")
+                      .attr("id", "t" + d.value + "-" + d.year)  
+                      .attr("x", width / 2-1/2*margin.left) 
+                      .attr("y", -1/4*margin.top)
+                      .text(function() {
+                        return d.States+" "+d.year+":"+d.value; 
+                      });
+                    }
+                function handleMouseOut(d, i) {
+                      d3.select("#t" + d.value + "-" + d.year).remove();  
+                    }
+
+			svg.append("text")
+                .attr("x", (width / 2))             
+                .attr("y", -1/2*margin.top)
+                .attr("text-anchor", "middle")  
+                .attr("class","title_text")
+                .text("Visualizing Earthquakes Counts by States 2010-2015(M3+)");
+
+			svg.append("text")
+                .attr("x", 220)             
+                .attr("y", 0.99*height+margin.bottom)
+                .attr("text-anchor", "middle")  
+                .attr("class","legend_text")
+                .text("count:");
+
+			svg.selectAll(".legend")
+        	.data(Color_Scheme)
+        	.enter()
+        	.append("g")
+        	.attr("class","legend")
+        	.attr("transform", function(d,i){
+        		return "translate("  + (200 + i * 40) + ","+ (height+margin.bottom) +")";
+        	})
+        	.attr("fill",function(d){return d;})
+        	.append("rect")
+        	.attr("width", 40)
+          	.attr("height", 30);
+
+
+        svg.selectAll(".legend").append("rect")
+      		.attr("width", 40)
+      		.attr("height", 30)
+            .style("fill", function(d){return Scaled_Color(d.val);});
+      	var form = d3.format(".0f");
+
+  		svg.selectAll(".legend").append("text")
+      		.attr("x", 0)
+      		.attr("y", 50)
+      		.text(function(d) {
+               return form(Scaled_Color.invertExtent(d)[0]);
+           	});
+		}
+</script>
+</body>
+</html>	

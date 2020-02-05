@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>US Earthquakes by Region 2010-2015</title>
+    <script src="../lib/d3.v5.min.js"></script>
+</head>
+    <style type="text/css">
+        .line_Midwest{
+            fill: none;
+            stroke:red;
+            stroke-width: 2;
+        }
+        .dot_Midwest {
+            fill: red;
+            stroke: red;
+        }
+        .line_Northeast{
+            fill: none;
+            stroke:blue;
+            stroke-width: 2;
+        }
+        .dot_Northeast {
+            fill: blue;
+            stroke: blue;
+        }
+        .line_South{
+            fill: none;
+            stroke: green;
+            stroke-width: 2;
+        }
+        .dot_South {
+            fill: green;
+            stroke: green;
+        }           
+        .line_West{
+            fill: none;
+            stroke: purple;
+            stroke-width: 2;
+        }
+        .dot_West {
+            fill: purple;
+            stroke: purple;
+        }  
+		.legend_text {
+            font-family: sans-serif;
+            font-size: 20px;
+            fill: black;
+            }
+        .axis_text {
+            font-family: sans-serif;
+            font-size: 14px;
+            fill: none;
+            }
+        .title_text {
+            font-family: sans-serif;
+            font-size: 24px;
+            fill: black;
+            }
+        @media print {
+          .pagebreak {
+              clear: both;
+              page-break-after: always;
+          }
+      }
+    </style>
+    <div id="Q5"></div>
+    <body>
+    <script type="text/javascript">
+    var margin = {top:100, right: 100, bottom:100, left:120}
+    , width = 1000 - margin.left - margin.right 
+    , height = 500 - margin.top - margin.bottom;
+    var year = ["2010", "2011", "2012", "2013", "2014", "2015"];
+    var region = ["Midwest","Northeast","South","West"];
+    var Q5map = d3.map()
+    var svg = d3.select("#Q5")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform","translate(" + margin.left + "," + margin.top + ")");
+    
+    d3.dsv(",","state-year-earthquakes.csv").then(function(data){
+        //console.log(data)
+        var regional_groups = d3.nest()
+        .key(function(d) { return d.region; })
+        .entries(data);
+       //console.log(regional_groups)
+        
+        var Midwest_Sum = [];
+        var Northeast_Sum = [];
+        var South_Sum = [];
+        var West_Sum = [];
+        var Collection = {};
+        
+
+        for (var i = 0; i<regional_groups.length; i++){
+            var regional_years_groups = d3.nest()
+            .key(function(d){return d.year;}).rollup(function(d) { return d3.sum(d, function(g) {return g.count; });
+            }).entries(regional_groups[i]['values'])
+            for (var j = 0; j <regional_years_groups.length;j++){ 
+                if (regional_groups[i]['key'] == "South"){
+                    South_Sum.push({region:regional_groups[i]['key'],count: regional_years_groups[j]['value'],
+                    year:regional_years_groups[j]['key']})
+                }
+                if (regional_groups[i]['key'] == "Midwest"){
+                    Midwest_Sum.push({region:regional_groups[i]['key'],count: regional_years_groups[j]['value'],
+                    year:regional_years_groups[j]['key']})
+                }
+                if (regional_groups[i]['key'] == "Northeast"){
+                    Northeast_Sum.push({region:regional_groups[i]['key'],count: regional_years_groups[j]['value'],
+                    year:regional_years_groups[j]['key']})
+                }
+                if (regional_groups[i]['key'] == "West"){
+                    West_Sum.push({region:regional_groups[i]['key'],count: regional_years_groups[j]['value'],
+                    year:regional_years_groups[j]['key']})
+                }
+            }
+        }
+
+        Collection["South"] = South_Sum
+        Collection["Midwest"] = Midwest_Sum
+        Collection["Northeast"] = Northeast_Sum
+        Collection["West"] = West_Sum
+        //console.log(Collection)
+        var count_max_South= d3.max(South_Sum,function(d){return d.count;});
+        var count_max_Midwest= d3.max(Midwest_Sum,function(d){return d.count;});
+        var count_max_Northeast= d3.max(Northeast_Sum,function(d){return d.count;});
+        var count_max_West= d3.max(West_Sum,function(d){return d.count;});
+        var count_max = d3.max([count_max_South,count_max_Midwest,count_max_Northeast,count_max_West]);
+        //console.log(count_max)
+
+        var x = d3.scaleTime()
+          .domain(d3.extent(data, function(d) { return d3.timeParse("%Y")(d.year); }))
+          .range([ 0, width ]);
+        
+        svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .attr("class","axis_text")
+            .call(d3.axisBottom(x)
+            .ticks(d3.timeYear.every(1)));
+
+        var y = d3.scaleLinear()
+            .domain([0, count_max])
+            .range([ height, 0]);
+        
+        svg.append("g")
+            .call(d3.axisLeft(y).ticks(10))
+            .attr("class","axis_text");
+
+        for (i = 0;i<region.length;i++) {
+            var line = d3.line()
+            .x(function(d) { return x(d3.timeParse("%Y")(d.year)); }) 
+            .y(function(d) { return y(d["count"]);}) 
+            .curve(d3.curveLinear);
+            svg.append("path")
+            .datum(Collection[region[i]])
+            .attr("class", "line_"+region[i]) 
+            .attr("d", line);
+            }
+ 
+        svg.append("text")
+          .attr("class","title_text")
+          .attr("x", (width / 2))             
+          .attr("y", 0 - (margin.top / 2))
+          .attr("text-anchor", "middle")
+          .text("US Earthquakes by Region 2010-2015");
+
+        var legend = svg.append("g")
+          .attr("class", "legend")
+
+        var color_hash = [ 
+           ['Midwest', '#FF0000'],
+           ['Northeast', '#0000FF'],
+           ['South', '#008000'],
+           ['West', '#800080']
+            ] 
+
+        legend.selectAll('g').data(color_hash)
+          .enter()
+          .append('g')
+          .each(function(d, i) {
+            var g = d3.select(this);
+            g.append("rect")
+                .attr("x", width-10)
+                .attr("y", i*20-20)
+                .attr("width", 20)
+                .attr("height",20)
+                .style("fill", color_hash[i][1]);
+            
+            g.append("text")
+                .attr("class","legend_text")
+                .attr("x", width+10 )
+                .attr("y", i * 20)
+                .text(color_hash[i][0]);
+            });
+
+            for (i = 0;i<region.length;i++) {
+            svg.selectAll("mybar")
+            .data(Collection[region[i]])
+            .enter()
+            .append("circle")
+            .attr("cx",function(d) { return x(d3.timeParse("%Y")(d.year)); })
+            .attr("cy",function(d) { return y(d["count"]); })
+            .attr("r", 4)
+            .attr("class", "dot_"+region[i]) 
+            .on('mouseover', handleMouseOver)
+            .on('mouseout', handleMouseOut)
+            }
+            function handleMouseOver(d,i) { 
+            d3.select(this)
+                .attr("r",10)
+
+            var pop_up_region = d.region
+            var pop_up_year = d.year
+            popup_data=[]
+            for (var i=0; i< data.length;i++){
+                if (data[i].year == pop_up_year && data[i].region == pop_up_region) {
+                popup_data.push({state: data[i].state, value:+data[i].count})
+                }
+            }
+            popup_data.sort(function(a, b) {
+                return d3.ascending(a.value, b.value)
+            })
+            var div = d3.select("body")
+                .append("div")
+                .attr("id", "popup")
+            var svg_pop_up = d3.select("#popup")
+            .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+                .attr("transform",
+                    "translate(" + margin.left + "," + margin.top + ")");
+
+            var pop_up_count_max = d3.max(popup_data, function(d) { return d.value});
+
+            var pop_up_x = d3.scaleLinear()
+                .domain([0, pop_up_count_max])
+                .range([0, width]);
+            var pop_up_y = d3.scaleBand()
+                .domain(popup_data.map(function(d) {
+                return d.state;
+                }))
+                .range([ height, 0])
+                .padding(0.1);
+
+            svg_pop_up.append("g")
+                .attr("class","axis_text")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(pop_up_x))
+
+            svg_pop_up.append("g")
+                .attr("class","axis_text")
+                .call(d3.axisLeft(pop_up_y));
+
+            svg_pop_up.selectAll()
+                    .data(popup_data)
+                    .enter()
+                    .append("rect")
+                    .attr("x", 0)
+                    .attr("y", function(d) { return pop_up_y(d.state) })
+                    .attr("height", pop_up_y.bandwidth() )
+                    .attr("width", function(d) { return pop_up_x(d.value) })
+                    .style("fill", "blue")
+
+
+            svg_pop_up.append("text")
+                .attr("x", (width / 2))             
+                .attr("y", 0 - (margin.top / 2))
+                .attr("text-anchor", "middle")  
+                .attr("class","title_text")
+                .text(pop_up_region+"ern Earthquakes "+pop_up_year);  
+            }
+
+
+
+
+            function handleMouseOut(d, i) {
+                d3.select("#popup").remove(); 
+                d3.select(this)
+                .attr("r",4)
+                }
+    });
+    </script>
+    </body>
+</html>

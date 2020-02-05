@@ -1,0 +1,24 @@
+1. Ease to develop for developers
+	Python: Many packages to use, great readability, easy to develop.
+	Tableau: Good GUI but not good for programming.
+	D3: Good readability and great flexibility, elements are independent controled, easy to develop.
+
+2. Ease to maintain the visualization for developers
+	Python: Easy to maintain, easily adaptive to changes, good community.
+	Tableau: Not easy to maintain, hard to deal with changes.
+	D3: Easy to maintain, easily adaptive to changes.
+
+3. Usability of visualization developed for end users
+	Python: Many packages to use, great support and flexibility.
+	Tableau: Limited flexibility for end users with specific requirements.
+	D3: Highly flexible, great visualization framework.
+
+4. Scalability of visualization to “large” datasets
+	Python: Depending on the packages, some are very good for large datasets.
+	Tableau: Not very good on scalability for large data.
+	D3: Easily scalable, data driven designed. 
+
+5. System requirements to run the visualization
+	Python: on Linux, unix, Windows, or macOS. Free.
+	Tableau: macOS, Windows, require software licensing. 
+	D3: based on html, web browsers etc. Free.

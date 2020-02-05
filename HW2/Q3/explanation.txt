@@ -1,0 +1,1 @@
+Generally, if data contained some very large values that are much larger than the other data, using non-linear scales such as square root scale or log scale can reduce the skewness towards these values. 
